@@ -1,8 +1,13 @@
+from asyncio.log import logger
 import pickle
 import pkgutil
+import logging
 
 import numpy as np
 from fuzzywuzzy import fuzz
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 
 class BaseCodes:
@@ -45,26 +50,30 @@ class BaseCodes:
             for row in self.codes_data
         }
 
+        # TODO: change name of dict to partial_search_fields
         self.entities2code = {}
         if self._partial_search_fields:
             for row in self.codes_data:
-                # TODO: refactor to comprehension
                 for field, field_value in row.items():
                     if (
                         field_value is None
                         or field_value is np.nan
                         or field_value == ""
+                        or field_value!=field_value
                     ):
                         continue
+                    # TODO: should we check duplication of field_value in dict?
                     if field in self._partial_search_fields:
-                        self.entities2code[field_value] = row[self._code_key]
+                        self.entities2code[field_value.lower()] = row[self._code_key]
 
         # we create dict for every dict_field for fast dict search
         if self._dict_search_fields is not None:
             self._dict_for_search = {}
             for field in self._dict_search_fields:
                 self._dict_for_search[field] = {
-                    row[field]: row[self._code_key] for row in self.codes_data
+                    row[field].lower(): row[self._code_key]
+                    for row in self.codes_data
+                    if not self._isnan(row[field])  # check for nan
                 }
 
     def get(self, code: str):
@@ -78,25 +87,30 @@ class BaseCodes:
         fuzzy_seach_type: str = "first",
         default_value=None,
     ):
+        assert isinstance(value, str), 'str only value is allowed'
+        # find lower case
+        value = value.lower()
+        
         if not isinstance(value, str):
             raise TypeError(f"value {value} should be str type")
 
         strict_result = self._find_in_dict_search_fields(value)
-        if strict_result:
+        if strict_result is not None:
+            logger.debug(f'strict found {strict_result}')
             return strict_result
 
         partial_result = self._find_partial(value)
         if partial_result:
+            logger.debug(f'partial found {partial_result}')
             return partial_result
 
         fuzzy_result = self._find_fuzzy(
             value=value,
-            no_fuzzy_search=no_fuzzy_search,
             fuzzy_search_threshold=fuzzy_search_threshold,
-            fuzzy_seach_type=fuzzy_seach_type,
-            default_value=default_value,
+            fuzzy_seach_type=fuzzy_seach_type
         )
         if fuzzy_result:
+            logger.debug(f'fuzzy found {fuzzy_result}')
             return fuzzy_result
 
         # Nothing found
@@ -131,10 +145,16 @@ class BaseCodes:
                 max_dist = cur_dist
                 best = code
 
-            if cur_dist >= fuzzy_search_threshold:
+            if cur_dist >= fuzzy_search_threshold*100:
                 count += 1
 
-            if max_dist >= fuzzy_search_threshold and fuzzy_seach_type == "first":
+            if max_dist >= fuzzy_search_threshold*100 and fuzzy_seach_type == "first":
                 break
 
         return best
+    
+    def _isnan(self, value):
+        if value!=value or value is None or value is np.nan:
+            return True
+        else:
+            return False

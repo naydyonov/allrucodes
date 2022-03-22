@@ -1,7 +1,7 @@
 import pickle
 
 # import pkgutil
-from basecodes import BaseCodes
+from .basecodes import BaseCodes
 
 
 class OKSMCodes(BaseCodes):
