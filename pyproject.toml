@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "allrucodes"
-version = "0.1.0"
+version = "0.1.1"
 homepage = "https://github.com/naydyonov/allrucodes"
 description = "Python package with a collection of official all-russian codes catalogs."
 authors = ["Alexey Naydyonov"]
