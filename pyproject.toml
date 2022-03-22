@@ -1,9 +1,22 @@
 [tool.poetry]
 name = "allrucodes"
 version = "0.1.0"
+homepage = "https://github.com/naydyonov/allrucodes"
 description = "Python package with a collection of official all-russian codes catalogs."
 authors = ["Alexey Naydyonov"]
+readme = "README.md"
 license = "MIT"
+classifiers=[
+    'Development Status :: 2 - Pre-Alpha',
+    'Intended Audience :: Developers',
+    'License :: OSI Approved :: MIT License',
+    'Natural Language :: English',
+    'Programming Language :: Python :: 3',
+    'Programming Language :: Python :: 3.6',
+    'Programming Language :: Python :: 3.7',
+    'Programming Language :: Python :: 3.8',
+    'Programming Language :: Python :: 3.9',
+]
 
 [tool.poetry.dependencies]
 python = "^3.8"
