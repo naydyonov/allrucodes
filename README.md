@@ -19,7 +19,9 @@ Python package with a collection of official all-russian code catalogs
 
 ## Features
 
-* TODO
+For now it contains few of all-russian classifiers:
+* OKSM (ОКСМ) - All-russian classifier of world countries (Общероссийский классификатор стран мира)
+* OKOPF (ОКОПФ) - All-russian classifier of organizational and legal forms (Общероссийский классификатор организационно-правовых форм)
 
 ## Credits
 
