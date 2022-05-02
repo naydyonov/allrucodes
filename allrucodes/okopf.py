@@ -1,4 +1,9 @@
+import logging
+
 from .basecodes import BaseCodes
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 
 class OKOPFCodes(BaseCodes):

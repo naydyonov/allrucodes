@@ -1,7 +1,10 @@
-import pickle
+import logging
 
 # import pkgutil
 from .basecodes import BaseCodes
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 
 class OKSMCodes(BaseCodes):

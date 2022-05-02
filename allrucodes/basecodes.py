@@ -1,4 +1,3 @@
-from asyncio.log import logger
 import pickle
 import pkgutil
 import logging
@@ -7,7 +6,7 @@ import numpy as np
 from fuzzywuzzy import fuzz
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 
 class BaseCodes:
@@ -28,8 +27,8 @@ class BaseCodes:
             dict_search_fields (_type_, optional): Fields used for fast search
                 as dict keys.
                 Defaults to None.
-            partial_search_fields (_type_, optional): Fields used for more slow
-                partial and fuzzy search.
+            partial_search_fields (_type_, optional): Fields used for slower
+                but more accurate partial and fuzzy search.
                 Defaults to None.
         """
 
@@ -37,29 +36,33 @@ class BaseCodes:
         assert isinstance(code_key, str)
         assert code_key != ""
 
-        self.codes_data = pickle.loads(pkgutil.get_data(__name__, f"data/{codes_file}"))
+        self._codes_data = pickle.loads(
+            pkgutil.get_data(__name__, f"data/{codes_file}")
+        )
         self._code_key = code_key
         self._dict_search_fields = dict_search_fields
         self._partial_search_fields = partial_search_fields
 
-        assert self.codes_data, "directory is empty!"
-        assert isinstance(self.codes_data, list)
+        if self._codes_data is None:
+            raise AssertionError("Data directory is empty!")
+        if not isinstance(self._codes_data, list):
+            raise TypeError("Codes data should be a list!")
 
         self.code2entities = {
             row[code_key]: {k: v for k, v in row.items() if k != code_key}
-            for row in self.codes_data
+            for row in self._codes_data
         }
 
         # TODO: change name of dict to partial_search_fields
         self.entities2code = {}
         if self._partial_search_fields:
-            for row in self.codes_data:
+            for row in self._codes_data:
                 for field, field_value in row.items():
                     if (
                         field_value is None
                         or field_value is np.nan
                         or field_value == ""
-                        or field_value!=field_value
+                        or field_value != field_value
                     ):
                         continue
                     # TODO: should we check duplication of field_value in dict?
@@ -72,7 +75,7 @@ class BaseCodes:
             for field in self._dict_search_fields:
                 self._dict_for_search[field] = {
                     row[field].lower(): row[self._code_key]
-                    for row in self.codes_data
+                    for row in self._codes_data
                     if not self._isnan(row[field])  # check for nan
                 }
 
@@ -87,31 +90,34 @@ class BaseCodes:
         fuzzy_seach_type: str = "first",
         default_value=None,
     ):
-        assert isinstance(value, str), 'str only value is allowed'
+        if not isinstance(value, str):
+            raise TypeError("Only str type value is allowed")
+
         # find lower case
         value = value.lower()
-        
+
         if not isinstance(value, str):
             raise TypeError(f"value {value} should be str type")
 
         strict_result = self._find_in_dict_search_fields(value)
         if strict_result is not None:
-            logger.debug(f'strict found {strict_result}')
+            logger.debug(f"strict found {strict_result}")
             return strict_result
 
         partial_result = self._find_partial(value)
         if partial_result:
-            logger.debug(f'partial found {partial_result}')
+            logger.debug(f"partial found {partial_result}")
             return partial_result
 
-        fuzzy_result = self._find_fuzzy(
-            value=value,
-            fuzzy_search_threshold=fuzzy_search_threshold,
-            fuzzy_seach_type=fuzzy_seach_type
-        )
-        if fuzzy_result:
-            logger.debug(f'fuzzy found {fuzzy_result}')
-            return fuzzy_result
+        if not no_fuzzy_search:
+            fuzzy_result = self._find_fuzzy(
+                value=value,
+                fuzzy_search_threshold=fuzzy_search_threshold,
+                fuzzy_seach_type=fuzzy_seach_type,
+            )
+            if fuzzy_result:
+                logger.debug(f"fuzzy found {fuzzy_result}")
+                return fuzzy_result
 
         # Nothing found
         return default_value
@@ -135,26 +141,37 @@ class BaseCodes:
         if not self._partial_search_fields:
             return None
 
+        # convert to value for fuzzywuzzy usage
+        fuzzy_search_threshold = fuzzy_search_threshold * 100
+
         max_dist = 0
         best = None
         count = 0
+        variants = []
 
         for field_value, code in self.entities2code.items():
             cur_dist = fuzz.partial_ratio(field_value, value)
-            if cur_dist > max_dist:
-                max_dist = cur_dist
-                best = code
-
-            if cur_dist >= fuzzy_search_threshold*100:
+            if cur_dist >= fuzzy_search_threshold:
                 count += 1
 
-            if max_dist >= fuzzy_search_threshold*100 and fuzzy_seach_type == "first":
-                break
+                if cur_dist > max_dist:
+                    max_dist = cur_dist
+                    best = code
+                    variants.append((best, cur_dist))
+
+                if fuzzy_seach_type == "first":
+                    logger.debug(f"fuzzy first found {best}, dist: {max_dist}")
+                    break
+
+        if fuzzy_seach_type == "best":
+            logger.debug(f"fuzzy found {count} variants")
+            logger.debug(f"fuzzy best found {best}, dist: {max_dist}")
+            logger.debug(f"variants: {variants}")
 
         return best
-    
+
     def _isnan(self, value):
-        if value!=value or value is None or value is np.nan:
+        if value != value or value is None or value is np.nan:
             return True
         else:
             return False

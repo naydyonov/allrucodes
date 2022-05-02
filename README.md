@@ -1,9 +1,9 @@
-# allrudirectory
+# allrucodes
 
 
 [![pypi](https://img.shields.io/pypi/v/allrucodes.svg)](https://pypi.org/project/allrucodes/)
 [![python](https://img.shields.io/pypi/pyversions/allrucodes.svg)](https://pypi.org/project/allrucodes/)
-[![Build Status](https://github.com/naydyonov/allrucodes/actions/workflows/dev.yml/badge.svg)](https://github.com/naydyonov/allrucodes/actions/workflows/dev.yml)
+[![Build Status](https://github.com/naydyonov/allrudirectory/actions/workflows/dev.yml/badge.svg)](https://github.com/naydyonov/allrudirectory/actions/workflows/dev.yml)
 [![codecov](https://codecov.io/gh/naydyonov/allrucodes/branch/main/graphs/badge.svg)](https://codecov.io/github/naydyonov/allrucodes)
 
 
